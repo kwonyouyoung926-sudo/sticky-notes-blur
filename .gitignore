@@ -5,3 +5,9 @@ __pycache__/
 .idea/
 Thumbs.db
 desktop.ini
+
+# PyInstaller 빌드 결과물 (exe는 Releases로 배포)
+build/
+dist/
+*.spec
+sticky_lock_build.py

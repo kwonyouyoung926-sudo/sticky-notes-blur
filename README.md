@@ -15,13 +15,34 @@ Windows **스티커 메모**를 블러로 가려 두고, 비밀번호를 입력�
 
 ## 시작하기
 
+### 방법 A. exe 파일 (파이썬 설치 없이)
+
+1. [Releases](https://github.com/kwonyouyoung926-sudo/sticky-notes-blur/releases)에서 `StickyLock.exe`를 받습니다.
+2. 더블클릭합니다.
+3. 처음 한 번만 비밀번호를 정합니다. (2자 이상, 숫자 2자리를 추천합니다)
+
+서명되지 않은 프로그램이라 처음 실행할 때 윈도우가 `추가 정보` → `실행`을 요구할 수 있습니다.
+
+### 방법 B. 소스 코드로 실행
+
 1. 이 저장소를 내려받습니다. (`Code` → `Download ZIP` → 압축 풀기)
 2. `run.bat`을 더블클릭합니다.
-3. 처음 한 번만 비밀번호를 정합니다. (2자 이상, 숫자 2자리를 추천합니다)
+3. 처음 한 번만 비밀번호를 정합니다.
 4. 스티커 메모 창이 블러로 덮이면 준비 끝입니다.
+
+`build-exe.bat`을 실행하면 직접 `dist\StickyLock.exe`를 만들 수도 있습니다.
 
 PC를 켤 때 자동으로 실행하려면 `install-startup.bat`을 한 번 실행하세요.
 되돌리려면 `uninstall-startup.bat`을 실행하면 됩니다.
+
+### "게시자를 확인하지 못했습니다" 창이 뜰 때
+
+인터넷에서 받은 파일에 윈도우가 붙이는 안내입니다. 파일에 문제가 있다는 뜻은 아니며,
+`실행`을 누르면 그대로 사용할 수 있습니다. 아예 안 뜨게 하려면 셋 중 하나를 쓰세요.
+
+- **압축 풀기 전에**: 받은 ZIP 우클릭 → 속성 → 아래쪽 `차단 해제` 체크 → 확인
+- **이미 풀었다면**: 폴더에서 PowerShell을 열고 `Get-ChildItem -Recurse . | Unblock-File`
+- **ZIP 대신 git으로 받기**: `git clone https://github.com/kwonyouyoung926-sudo/sticky-notes-blur.git`
 
 ## 사용법
 
