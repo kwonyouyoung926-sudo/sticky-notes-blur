@@ -228,6 +228,36 @@ def has_password():
     return "hash" in load_config()
 
 
+# ───────── 시작프로그램 등록 (바로가기 하나를 만들거나 지운다) ─────────
+def _startup_link():
+    appdata = os.environ.get("APPDATA", os.path.expanduser("~"))
+    return os.path.join(appdata, r"Microsoft\Windows\Start Menu\Programs\Startup\StickyLock.lnk")
+
+
+def autostart_enabled():
+    return os.path.exists(_startup_link())
+
+
+def set_autostart(enable):
+    """윈도우를 켤 때 자동 실행할지 설정. exe로 실행 중이면 exe를, 아니면 파이썬을 등록한다."""
+    link = _startup_link()
+    if not enable:
+        ps = f"Remove-Item -LiteralPath '{link}' -ErrorAction SilentlyContinue"
+    else:
+        if getattr(sys, "frozen", False):          # exe로 빌드된 경우
+            target, args = sys.executable, ""
+        else:
+            target = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+            args = f'"{os.path.abspath(__file__)}"'
+        ps = ("$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{link}');"
+              "$s.TargetPath='{target}';$s.Arguments='{args}';"
+              "$s.WorkingDirectory='{home}';$s.Save()").format(
+            link=link, target=target, args=args, home=os.path.dirname(target))
+    subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                   creationflags=0x08000000, check=False)
+    return autostart_enabled()
+
+
 def password_length():
     """잠금 화면에 보여 줄 입력 칸 수."""
     return max(1, min(int(load_config().get("len", MIN_PASSWORD_LEN)), 12))
@@ -421,9 +451,7 @@ class LockButton:
         menu = tk.Menu(self.win, tearoff=0, font=(FONT, 10))
         menu.add_command(label="이 메모 잠그기", command=lambda: self.app.lock_note(self.note))
         menu.add_command(label="모든 메모 잠그기", command=self.app.lock_all)
-        menu.add_command(label="비밀번호 변경", command=self.app.change_password)
-        menu.add_separator()
-        menu.add_command(label="StickyLock 종료", command=self.app.quit)
+        self.app.add_common_menu(menu)
         menu.tk_popup(event.x_root, event.y_root)
 
     def place(self, rect):
@@ -463,8 +491,7 @@ class Toolbar:
         self.status.pack(side="left")
         self._button("메모 열기", app.open_notes, "#3B6E4B")
         self._button("모두 잠그기", app.lock_all, ACCENT)
-        self._button("비밀번호 변경", app.change_password)
-        self._button("종료", app.quit)
+        self._button("⚙", self.popup_menu)       # 비밀번호 변경 · 자동 실행 · 종료
         self._button("▾", self.toggle)
         self.mini = tk.Label(self.win, text="🔒", font=(FONT, 10), bg=self.BG, fg=self.FG,
                              padx=10, pady=3, cursor="hand2")
@@ -488,6 +515,11 @@ class Toolbar:
                        padx=9, pady=2, cursor="hand2")
         btn.pack(side="left", padx=(6, 0))
         btn.bind("<Button-1>", lambda e: command())
+
+    def popup_menu(self):
+        menu = tk.Menu(self.win, tearoff=0, font=(FONT, 10))
+        self.app.add_common_menu(menu)
+        menu.tk_popup(*self.win.winfo_pointerxy())
 
     def drag_start(self, event):
         self.drag = [event.x_root, event.y_root, self.win.winfo_x(), self.win.winfo_y(), False]
@@ -606,6 +638,20 @@ class App:
         dialog.grab_set()
         self.root.wait_window(dialog)
         return done["ok"]
+
+    def add_common_menu(self, menu):
+        """자물쇠 버튼과 툴바가 함께 쓰는 메뉴 항목."""
+        menu.add_command(label="비밀번호 변경", command=self.change_password)
+        self._autostart_var = tk.BooleanVar(value=autostart_enabled())   # 메뉴가 닫힐 때까지 유지
+        menu.add_checkbutton(label="윈도우 시작할 때 자동 실행", command=self.toggle_autostart,
+                             variable=self._autostart_var)
+        menu.add_separator()
+        menu.add_command(label="StickyLock 종료", command=self.quit)
+
+    def toggle_autostart(self):
+        enabled = set_autostart(not autostart_enabled())
+        messagebox.showinfo("StickyLock", "윈도우를 켤 때 자동으로 실행됩니다." if enabled
+                            else "자동 실행을 해제했습니다.")
 
     def change_password(self):
         if self.ask_password("비밀번호 변경", change=True):
