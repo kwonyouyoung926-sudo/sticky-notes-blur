@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.log
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
